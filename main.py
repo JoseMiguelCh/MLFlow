@@ -1,14 +1,21 @@
 """
 Main script to train a model and log the results with MLFlow
 """
+import os
 import argparse
 import logging
 import pandas as pd
+import mlflow
+import mlflow.sklearn
 from sklearn.linear_model import ElasticNet
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.model_selection import train_test_split
 
 logging.basicConfig(level=logging.DEBUG)
+EXPERIMENT_NAME = "wine-quality1"
+MLFLOW_TRACKING_SERVER_URI = os.environ.get("LOCAL_TRACKING_SERVER_URL")
+experiment = mlflow.set_experiment(EXPERIMENT_NAME)
+mlflow.set_tracking_uri(MLFLOW_TRACKING_SERVER_URI)
 
 def main():
     """
@@ -43,6 +50,7 @@ def load_data():
     y = df["quality"]
     x_train, x_test, y_train, y_test = train_test_split(
         X, y, test_size=0.2, random_state=42)
+    mlflow.log_artifact(data_path)
     return x_train, x_test, y_train, y_test
 
 
@@ -55,10 +63,12 @@ def train_model(x, y, alpha, l1_ratio):
     logging.info("normalize %s", "True")
     logging.info("alpha %s", alpha)
     logging.info("l1_ratio %s", l1_ratio)
-
-    # model
+    #with mlflow.start_run(experiment_id=experiment.experiment_id):
+    mlflow.log_param("alpha", alpha)
+    mlflow.log_param("l1_ratio", l1_ratio)
     model = ElasticNet(alpha=alpha, l1_ratio=l1_ratio, random_state=42)
     model.fit(x, y)
+    mlflow.sklearn.log_model(model, "EN_model")
     return model
 
 
@@ -74,6 +84,7 @@ def evaluate_model(model, x, y):
     metrics["mae"] = mean_absolute_error(y, y_pred)
     for k, v in metrics.items():
         logging.info("%s: %s", k, v)
+        mlflow.log_metric(k, v)
     return metrics
 
 
