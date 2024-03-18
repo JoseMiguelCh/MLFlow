@@ -3,18 +3,12 @@ Main script to train a model and log the results with MLFlow
 """
 import argparse
 import logging
-import os
-import mlflow
 import pandas as pd
 from sklearn.linear_model import ElasticNet
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.model_selection import train_test_split
 
 logging.basicConfig(level=logging.DEBUG)
-TRACKING_URI = os.environ.get("LOCAL_TRACKING_SERVER_URL")
-EXPERIMENT_NAME = "wine-quality"
-mlflow.set_tracking_uri(TRACKING_URI)
-mlflow.set_experiment(EXPERIMENT_NAME)
 
 def main():
     """
@@ -45,7 +39,6 @@ def load_data():
     except FileNotFoundError as e:
         logging.error("Error reading the dataset %s", e)
     # registering the data
-    mlflow.log_artifact(data_path)
     X = df.drop(["quality"], axis=1)
     y = df["quality"]
     x_train, x_test, y_train, y_test = train_test_split(
@@ -58,19 +51,14 @@ def train_model(x, y, alpha, l1_ratio):
     Train the model with the given parameters
     """
     logging.info("Training model")
-    with mlflow.start_run(nested=True):
-        model = None
-        mlflow.log_param("model", "linear")
-        mlflow.log_param("normalize", "True")
-        mlflow.log_param("alpha", alpha)
-        mlflow.log_param("l1_ratio", l1_ratio)
+    logging.info("model %s", "linear")
+    logging.info("normalize %s", "True")
+    logging.info("alpha %s", alpha)
+    logging.info("l1_ratio %s", l1_ratio)
 
-        # model
-        model = ElasticNet(alpha=alpha, l1_ratio=l1_ratio, random_state=42)
-        model.fit(x, y)
-        datetime = mlflow.active_run().info.start_time
-        modelpath = f"models/wine-quality-{datetime}"
-        mlflow.sklearn.save_model(model, modelpath)
+    # model
+    model = ElasticNet(alpha=alpha, l1_ratio=l1_ratio, random_state=42)
+    model.fit(x, y)
     return model
 
 
@@ -86,7 +74,6 @@ def evaluate_model(model, x, y):
     metrics["mae"] = mean_absolute_error(y, y_pred)
     for k, v in metrics.items():
         logging.info("%s: %s", k, v)
-    mlflow.log_metrics(metrics)
     return metrics
 
 
