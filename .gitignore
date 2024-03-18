@@ -1,0 +1,6 @@
+artifacts/*
+data/*
+mlruns/*
+models/*
+__pycache__/*
+.vscode/launch.json
