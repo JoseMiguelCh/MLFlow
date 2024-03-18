@@ -15,7 +15,7 @@ from sklearn.model_selection import train_test_split
 
 logging.basicConfig(level=logging.INFO)
 EXPERIMENT_NAME = "wine-quality2"
-MLFLOW_TRACKING_SERVER_URI = os.environ.get("AZUREML_TRACKING_SERVER_URL")
+MLFLOW_TRACKING_SERVER_URI = os.environ.get("LOCAL_TRACKING_SERVER_URL")
 
 # This uri can be a path or a server
 mlflow.set_tracking_uri(MLFLOW_TRACKING_SERVER_URI)
@@ -38,10 +38,14 @@ def main():
                  mlflow.get_tracking_uri())
     mlflow.set_experiment(EXPERIMENT_NAME)
     # Load, train, evaluate and log the model
-    x_train, x_test, y_train, y_test = load_data()
-    model = train_model(x_train, y_train, args.alpha, args.l1_ratio)
-    evaluate_model(model, x_test, y_test)
-
+    with mlflow.start_run():
+        x_train, x_test, y_train, y_test = load_data()
+        model = train_model(x_train, y_train, args.alpha, args.l1_ratio)
+        evaluate_model(model, x_test, y_test)
+        with mlflow.start_run(nested=True):
+            x_train, x_test, y_train, y_test = load_data()
+            model = train_model(x_train, y_train, args.alpha, args.l1_ratio)
+            evaluate_model(model, x_test, y_test)
 
 def load_data():
     """
