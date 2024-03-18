@@ -1,21 +1,24 @@
 """
 Main script to train a model and log the results with MLFlow
 """
-import os
 import argparse
 import logging
-import pandas as pd
+import os
+
 import mlflow
 import mlflow.sklearn
+import pandas as pd
+from azure.identity import DefaultAzureCredential, InteractiveBrowserCredential
 from sklearn.linear_model import ElasticNet
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.model_selection import train_test_split
 
 logging.basicConfig(level=logging.DEBUG)
-EXPERIMENT_NAME = "wine-quality1"
-MLFLOW_TRACKING_SERVER_URI = os.environ.get("LOCAL_TRACKING_SERVER_URL")
-experiment = mlflow.set_experiment(EXPERIMENT_NAME)
+EXPERIMENT_NAME = "wine-quality2"
+MLFLOW_TRACKING_SERVER_URI = os.environ.get("AZUREML_TRACKING_SERVER_URL")
+
 mlflow.set_tracking_uri(MLFLOW_TRACKING_SERVER_URI)
+
 
 def main():
     """
@@ -29,6 +32,8 @@ def main():
     params = vars(args).items()
     for k, v in params:
         logging.info("%s: %s", k, v)
+    # azure_auth()
+    mlflow.set_experiment(EXPERIMENT_NAME)
     # Load, train, evaluate and log the model
     x_train, x_test, y_train, y_test = load_data()
     model = train_model(x_train, y_train, args.alpha, args.l1_ratio)
@@ -63,7 +68,6 @@ def train_model(x, y, alpha, l1_ratio):
     logging.info("normalize %s", "True")
     logging.info("alpha %s", alpha)
     logging.info("l1_ratio %s", l1_ratio)
-    #with mlflow.start_run(experiment_id=experiment.experiment_id):
     mlflow.log_param("alpha", alpha)
     mlflow.log_param("l1_ratio", l1_ratio)
     model = ElasticNet(alpha=alpha, l1_ratio=l1_ratio, random_state=42)
@@ -87,6 +91,19 @@ def evaluate_model(model, x, y):
         mlflow.log_metric(k, v)
     return metrics
 
+
+def azure_auth():
+    """
+    Authenticate to Azure
+    """
+    logging.info("Authenticating to Azure")
+    try:
+        credential = DefaultAzureCredential()
+        credential.get_token("https://management.azure.com/.default")
+    except Exception as ex:
+        logging.error("Could not authenticate to Azure: %s", ex)
+        credential = InteractiveBrowserCredential()
+    return credential
 
 if __name__ == "__main__":
     main()
