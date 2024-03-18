@@ -13,10 +13,11 @@ from sklearn.linear_model import ElasticNet
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.model_selection import train_test_split
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 EXPERIMENT_NAME = "wine-quality2"
 MLFLOW_TRACKING_SERVER_URI = os.environ.get("AZUREML_TRACKING_SERVER_URL")
 
+# This uri can be a path or a server
 mlflow.set_tracking_uri(MLFLOW_TRACKING_SERVER_URI)
 
 
@@ -33,6 +34,8 @@ def main():
     for k, v in params:
         logging.info("%s: %s", k, v)
     # azure_auth()
+    logging.info("Using the MLFlow tracking server: %s",
+                 mlflow.get_tracking_uri())
     mlflow.set_experiment(EXPERIMENT_NAME)
     # Load, train, evaluate and log the model
     x_train, x_test, y_train, y_test = load_data()
@@ -55,6 +58,8 @@ def load_data():
     y = df["quality"]
     x_train, x_test, y_train, y_test = train_test_split(
         X, y, test_size=0.2, random_state=42)
+    mlflow.set_tags({"data_path": data_path, "n_samples": len(
+        df), "n_features": len(df.columns)})
     mlflow.log_artifact(data_path)
     return x_train, x_test, y_train, y_test
 
@@ -89,6 +94,7 @@ def evaluate_model(model, x, y):
     for k, v in metrics.items():
         logging.info("%s: %s", k, v)
         mlflow.log_metric(k, v)
+    logging.info("MLFlow run: %s", mlflow.active_run().info.run_id)
     return metrics
 
 
@@ -104,6 +110,7 @@ def azure_auth():
         logging.error("Could not authenticate to Azure: %s", ex)
         credential = InteractiveBrowserCredential()
     return credential
+
 
 if __name__ == "__main__":
     main()
