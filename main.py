@@ -42,10 +42,12 @@ def main():
         x_train, x_test, y_train, y_test = load_data()
         model = train_model(x_train, y_train, args.alpha, args.l1_ratio)
         evaluate_model(model, x_test, y_test)
-        with mlflow.start_run(nested=True):
-            x_train, x_test, y_train, y_test = load_data()
-            model = train_model(x_train, y_train, args.alpha, args.l1_ratio)
-            evaluate_model(model, x_test, y_test)
+    last_run_id = mlflow.last_active_run().info.run_id
+    with mlflow.start_run(run_id=last_run_id, nested=True):
+        x_train, x_test, y_train, y_test = load_data()
+        model = train_model(x_train, y_train, args.alpha, args.l1_ratio)
+        evaluate_model(model, x_test, y_test)
+
 
 def load_data():
     """
