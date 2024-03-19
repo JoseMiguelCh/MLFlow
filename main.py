@@ -112,7 +112,7 @@ def azure_auth():
     try:
         credential = DefaultAzureCredential()
         credential.get_token("https://management.azure.com/.default")
-    except Exception as ex: # pylint: disable=broad-except
+    except Exception as ex:  # pylint: disable=broad-except
         logging.error("Could not authenticate to Azure: %s", ex)
         credential = InteractiveBrowserCredential()
     return credential

@@ -19,6 +19,7 @@ mlflow ui // In another terminal
 ```
 
 ## MLFlow configurations
+
 Localhost ![MLFlow configurations](docs/.attachments/tracking_server1.png)
 Localhost with db for parameters ![MLFlow configurations](docs/.attachments/tracking_server2.png)
 Localhost Tracking Server ![MLFlow configurations](docs/.attachments/tracking_server3.png)

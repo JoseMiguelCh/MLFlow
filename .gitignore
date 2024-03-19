@@ -5,3 +5,5 @@ models/*
 __pycache__/*
 .vscode/launch.json
 mlartifacts/*
+sklearn_model.pkl
+red-wine-data/*
