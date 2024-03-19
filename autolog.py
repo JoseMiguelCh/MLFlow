@@ -37,12 +37,8 @@ def main():
     logging.info("Using the MLFlow tracking server: %s",
                  mlflow.get_tracking_uri())
     mlflow.set_experiment(EXPERIMENT_NAME)
+    mlflow.sklearn.autolog()
     # Load, train, evaluate and log the model
-    with mlflow.start_run():
-        x_train, x_test, y_train, y_test = load_data()
-        model = train_model(x_train, y_train, args.alpha, args.l1_ratio)
-        evaluate_model(model, x_test, y_test)
-    mlflow.set_experiment(f"{EXPERIMENT_NAME}2")
     with mlflow.start_run():
         x_train, x_test, y_train, y_test = load_data()
         model = train_model(x_train, y_train, args.alpha, args.l1_ratio)
@@ -64,9 +60,6 @@ def load_data():
     y = df["quality"]
     x_train, x_test, y_train, y_test = train_test_split(
         x, y, test_size=0.2, random_state=42)
-    mlflow.set_tags({"data_path": data_path, "n_samples": len(
-        df), "n_features": len(df.columns)})
-    mlflow.log_artifact(data_path)
     return x_train, x_test, y_train, y_test
 
 
@@ -79,11 +72,8 @@ def train_model(x, y, alpha, l1_ratio):
     logging.info("normalize %s", "True")
     logging.info("alpha %s", alpha)
     logging.info("l1_ratio %s", l1_ratio)
-    mlflow.log_param("alpha", alpha)
-    mlflow.log_param("l1_ratio", l1_ratio)
     model = ElasticNet(alpha=alpha, l1_ratio=l1_ratio, random_state=42)
     model.fit(x, y)
-    mlflow.sklearn.log_model(model, "EN_model")
     return model
 
 
@@ -99,7 +89,6 @@ def evaluate_model(model, x, y):
     metrics["mae"] = mean_absolute_error(y, y_pred)
     for k, v in metrics.items():
         logging.info("%s: %s", k, v)
-        mlflow.log_metric(k, v)
     logging.info("MLFlow run: %s", mlflow.active_run().info.run_id)
     return metrics
 
@@ -112,7 +101,7 @@ def azure_auth():
     try:
         credential = DefaultAzureCredential()
         credential.get_token("https://management.azure.com/.default")
-    except Exception as ex: # pylint: disable=broad-except
+    except Exception as ex:  # pylint: disable=broad-except
         logging.error("Could not authenticate to Azure: %s", ex)
         credential = InteractiveBrowserCredential()
     return credential
